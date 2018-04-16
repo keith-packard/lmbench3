@@ -18,7 +18,7 @@ char	*id = "$Id: s.lat_mem_rd.c 1.13 98/06/30 16:13:49-07:00 lm@lm.bitmover.com 
 #define STRIDE  (512/sizeof(char *))
 #define	LOWER	512
 void	loads(size_t len, size_t range, size_t stride, 
-	      int parallel, int warmup, int repetitions);
+	      int parallel, int warmup, int repetitions, char *directory);
 size_t	step(size_t k);
 void	initialize(iter_t iterations, void* cookie);
 
@@ -35,9 +35,10 @@ main(int ac, char **av)
         size_t	len;
 	size_t	range;
 	size_t	stride;
-	char   *usage = "[-P <parallelism>] [-W <warmup>] [-N <repetitions>] [-t] len [stride...]\n";
+	char   *directory = NULL;
+	char   *usage = "[-P <parallelism>] [-W <warmup>] [-N <repetitions>] [-D <directory>] [-t] len [stride...]\n";
 
-	while (( c = getopt(ac, av, "tP:W:N:")) != EOF) {
+	while (( c = getopt(ac, av, "tP:W:N:D:")) != EOF) {
 		switch(c) {
 		case 't':
 			fpInit = thrash_initialize;
@@ -51,6 +52,9 @@ main(int ac, char **av)
 			break;
 		case 'N':
 			repetitions = atoi(optarg);
+			break;
+		case 'D':
+			directory = optarg;
 			break;
 		default:
 			lmbench_usage(ac, av, usage);
@@ -68,7 +72,7 @@ main(int ac, char **av)
 		fprintf(stderr, "\"stride=%d\n", STRIDE);
 		for (range = LOWER; range <= len; range = step(range)) {
 			loads(len, range, STRIDE, parallel, 
-			      warmup, repetitions);
+			      warmup, repetitions, directory);
 		}
 	} else {
 		for (i = optind + 1; i < ac; ++i) {
@@ -76,7 +80,7 @@ main(int ac, char **av)
 			fprintf(stderr, "\"stride=%d\n", stride);
 			for (range = LOWER; range <= len; range = step(range)) {
 				loads(len, range, stride, parallel, 
-				      warmup, repetitions);
+				      warmup, repetitions, directory);
 			}
 			fprintf(stderr, "\n");
 		}
@@ -112,7 +116,7 @@ benchmark_loads(iter_t iterations, void *cookie)
 
 void
 loads(size_t len, size_t range, size_t stride, 
-	int parallel, int warmup, int repetitions)
+      int parallel, int warmup, int repetitions, char *directory)
 {
 	double result;
 	size_t count;
@@ -125,6 +129,7 @@ loads(size_t len, size_t range, size_t stride,
 	state.maxlen = len;
 	state.line = stride;
 	state.pagesize = getpagesize();
+	state.directory = directory;
 	count = 100 * (state.len / (state.line * 100) + 1);
 
 #if 0

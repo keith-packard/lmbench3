@@ -12,6 +12,7 @@
  * Support for this development by Sun Microsystems is gratefully acknowledged.
  */
 
+#define _GNU_SOURCE
 #include "bench.h"
 
 #define	FIVE(m)		m m m m m
@@ -125,6 +126,37 @@ tlb_cleanup(iter_t iterations, void* cookie)
 	}
 }
 
+static void *
+base_allocate(char *directory, size_t size)
+{
+	char   *template;
+	int	fd;
+	void   *addr;
+
+	if (directory == NULL)
+		return malloc(size);
+
+	if (asprintf(&template, "%s/lmbench-XXXXXX", directory) < 0)
+		return NULL;
+
+	fd = mkstemp(template);
+	free(template);
+	if (fd < 0)
+		return NULL;
+	unlink(template);
+
+	if (ftruncate(fd, size) < 0) {
+		close(fd);
+		return NULL;
+	}
+
+	addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	close(fd);
+	if (addr == MAP_FAILED)
+		return NULL;
+	return addr;
+}
+
 void
 base_initialize(iter_t iterations, void* cookie)
 {
@@ -150,7 +182,7 @@ base_initialize(iter_t iterations, void* cookie)
 	words = NULL;
 	lines = NULL;
 	pages = permutation(nmpages, state->pagesize);
-	p = state->addr = (char*)malloc(state->maxlen + 2 * state->pagesize);
+	p = state->addr = base_allocate(state->directory, state->maxlen + 2 * state->pagesize);
 
 	state->nwords = nwords;
 	state->nlines = nlines;
