@@ -35,8 +35,8 @@ main(int ac, char **av)
         size_t	len;
 	size_t	range;
 	size_t	stride;
-	char   *directory = NULL;
-	char   *usage = "[-P <parallelism>] [-W <warmup>] [-N <repetitions>] [-D <directory>] [-t] len [stride...]\n";
+	char   *filename = NULL;
+	char   *usage = "[-P <parallelism>] [-W <warmup>] [-N <repetitions>] [-F <filename>] [-t] len [stride...]\n";
 
 	while (( c = getopt(ac, av, "tP:W:N:D:")) != EOF) {
 		switch(c) {
@@ -53,8 +53,8 @@ main(int ac, char **av)
 		case 'N':
 			repetitions = atoi(optarg);
 			break;
-		case 'D':
-			directory = optarg;
+		case 'F':
+			filename = optarg;
 			break;
 		default:
 			lmbench_usage(ac, av, usage);
@@ -72,7 +72,7 @@ main(int ac, char **av)
 		fprintf(stderr, "\"stride=%d\n", STRIDE);
 		for (range = LOWER; range <= len; range = step(range)) {
 			loads(len, range, STRIDE, parallel, 
-			      warmup, repetitions, directory);
+			      warmup, repetitions, filename);
 		}
 	} else {
 		for (i = optind + 1; i < ac; ++i) {
@@ -80,7 +80,7 @@ main(int ac, char **av)
 			fprintf(stderr, "\"stride=%d\n", stride);
 			for (range = LOWER; range <= len; range = step(range)) {
 				loads(len, range, stride, parallel, 
-				      warmup, repetitions, directory);
+				      warmup, repetitions, filename);
 			}
 			fprintf(stderr, "\n");
 		}
@@ -116,7 +116,7 @@ benchmark_loads(iter_t iterations, void *cookie)
 
 void
 loads(size_t len, size_t range, size_t stride, 
-      int parallel, int warmup, int repetitions, char *directory)
+      int parallel, int warmup, int repetitions, char *filename)
 {
 	double result;
 	size_t count;
@@ -129,7 +129,7 @@ loads(size_t len, size_t range, size_t stride,
 	state.maxlen = len;
 	state.line = stride;
 	state.pagesize = getpagesize();
-	state.directory = directory;
+	state.filename = filename;
 	count = 100 * (state.len / (state.line * 100) + 1);
 
 #if 0

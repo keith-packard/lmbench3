@@ -35,7 +35,7 @@ main(int ac, char **av)
 
 	state.line = sizeof(char*);
 	state.pagesize = getpagesize();
-	state.directory = NULL;
+	state.filename = NULL;
 
 	while (( c = getopt(ac, av, "avM:W:N:")) != EOF) {
 		switch(c) {

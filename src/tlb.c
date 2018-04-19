@@ -38,17 +38,17 @@ main(int ac, char **av)
 	int	repetitions = TRIES;
 	double	tlb_time, cache_time, diff;
 	struct mem_state state;
-	char   *usage = "[-c] [-L <line size>] [-M len[K|M]] [-W <warmup>] [-N <repetitions>] [-D <directory>]\n";
+	char   *usage = "[-c] [-L <line size>] [-M len[K|M]] [-W <warmup>] [-N <repetitions>] [-F <filename>]\n";
 
 	maxpages = 16 * 1024;
 	state.width = 1;
 	state.pagesize = getpagesize();
 	state.line = sizeof(char*);
-	state.directory = NULL;
+	state.filename = NULL;
 
 	tlb = 2;
 
-	while (( c = getopt(ac, av, "cL:M:W:N:D:")) != EOF) {
+	while (( c = getopt(ac, av, "cL:M:W:N:F:")) != EOF) {
 		switch(c) {
 		case 'c':
 			print_cost = 1;
@@ -66,8 +66,8 @@ main(int ac, char **av)
 		case 'N':
 			repetitions = atoi(optarg);
 			break;
-		case 'D':
-			state.directory = optarg;
+		case 'F':
+			state.filename = optarg;
 			break;
 		default:
 			lmbench_usage(ac, av, usage);

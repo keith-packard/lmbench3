@@ -127,23 +127,17 @@ tlb_cleanup(iter_t iterations, void* cookie)
 }
 
 static void *
-base_allocate(char *directory, size_t size)
+base_allocate(char *file, size_t size)
 {
-	char   *template;
 	int	fd;
 	void   *addr;
 
-	if (directory == NULL)
+	if (file == NULL)
 		return malloc(size);
 
-	if (asprintf(&template, "%s/lmbench-XXXXXX", directory) < 0)
-		return NULL;
-
-	fd = mkstemp(template);
-	free(template);
+	fd = open(file, O_RDWR);
 	if (fd < 0)
 		return NULL;
-	unlink(template);
 
 	if (ftruncate(fd, size) < 0) {
 		close(fd);
@@ -182,7 +176,7 @@ base_initialize(iter_t iterations, void* cookie)
 	words = NULL;
 	lines = NULL;
 	pages = permutation(nmpages, state->pagesize);
-	p = state->addr = base_allocate(state->directory, state->maxlen + 2 * state->pagesize);
+	p = state->addr = base_allocate(state->filename, state->maxlen + 2 * state->pagesize);
 
 	state->nwords = nwords;
 	state->nlines = nlines;
