@@ -75,6 +75,60 @@ mem_reset()
 	mem_benchmark_rerun = 0;
 }
 
+static int base_fd = -1;
+static void *base_addr;
+static size_t base_size;
+static int base_inuse;
+
+static void *
+base_allocate(char *file, size_t size)
+{
+	void   *addr;
+
+	if (file == NULL)
+		return malloc(size);
+
+	if (base_inuse) {
+		printf("panic, attempting to allocate more than once\n");
+		exit(1);
+	}
+
+	if (base_size < size) {
+		if (base_addr != NULL) {
+			munmap(base_addr, base_size);
+			base_addr = NULL;
+			base_size = 0;
+		}
+
+		if (base_fd < 0) {
+			base_fd = open(file, O_RDWR);
+			if (base_fd < 0)
+				return NULL;
+		}
+
+		if (ftruncate(base_fd, size) < 0) {
+			close(base_fd);
+			base_fd = -1;
+			return NULL;
+		}
+
+		addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, base_fd, 0);
+		if (addr == MAP_FAILED)
+			return NULL;
+		base_addr = addr;
+		base_size = size;
+	}
+	base_inuse = 1;
+	return base_addr;
+}
+
+static void
+base_free(char *addr)
+{
+	base_inuse = 0;
+	(void) addr;
+}
+
 void
 mem_cleanup(iter_t iterations, void* cookie)
 {
@@ -83,7 +137,7 @@ mem_cleanup(iter_t iterations, void* cookie)
 	if (iterations) return;
 
 	if (state->addr) {
-		free(state->addr);
+		base_free(state->addr);
 		state->addr = NULL;
 	}
 	if (state->lines) {
@@ -124,31 +178,6 @@ tlb_cleanup(iter_t iterations, void* cookie)
 		free(state->lines);
 		state->lines = NULL;
 	}
-}
-
-static void *
-base_allocate(char *file, size_t size)
-{
-	int	fd;
-	void   *addr;
-
-	if (file == NULL)
-		return malloc(size);
-
-	fd = open(file, O_RDWR);
-	if (fd < 0)
-		return NULL;
-
-	if (ftruncate(fd, size) < 0) {
-		close(fd);
-		return NULL;
-	}
-
-	addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	close(fd);
-	if (addr == MAP_FAILED)
-		return NULL;
-	return addr;
 }
 
 void

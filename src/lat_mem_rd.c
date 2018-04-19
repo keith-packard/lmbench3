@@ -38,7 +38,7 @@ main(int ac, char **av)
 	char   *filename = NULL;
 	char   *usage = "[-P <parallelism>] [-W <warmup>] [-N <repetitions>] [-F <filename>] [-t] len [stride...]\n";
 
-	while (( c = getopt(ac, av, "tP:W:N:D:")) != EOF) {
+	while (( c = getopt(ac, av, "tP:W:N:F:")) != EOF) {
 		switch(c) {
 		case 't':
 			fpInit = thrash_initialize;
